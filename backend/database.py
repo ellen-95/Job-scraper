@@ -20,7 +20,7 @@ SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 
 def init_db() -> None:
     """Create database tables if they do not already exist."""
-    from backend import models
+    from backend import models  # noqa: F401
 
     Base.metadata.create_all(bind=engine)
 

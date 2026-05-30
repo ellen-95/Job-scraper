@@ -2,6 +2,8 @@ name: CI
 
 on:
   push:
+    branches:
+      - main
   pull_request:
 
 jobs:
@@ -20,5 +22,8 @@ jobs:
       - name: Install dependencies
         run: pip install -r backend/requirements.txt
 
-      - name: Import FastAPI app
-        run: python -c "from backend.main import app; print(app.title)"
+      - name: Run Ruff
+        run: ruff check backend
+
+      - name: Run tests
+        run: pytest backend
