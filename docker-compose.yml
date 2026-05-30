@@ -1,11 +1,30 @@
 services:
+  db:
+    image: mysql:8
+    environment:
+      MYSQL_DATABASE: jobsdb
+      MYSQL_USER: appuser
+      MYSQL_PASSWORD: apppassword
+      MYSQL_ROOT_PASSWORD: rootpassword
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
   backend:
     image: python:3.12-slim
     working_dir: /app
+    environment:
+      DATABASE_URL: mysql+pymysql://appuser:apppassword@db:3306/jobsdb
     volumes:
       - .:/app
     ports:
       - "8000:8000"
+    depends_on:
+      - db
     command: >
       sh -c "pip install --no-cache-dir -r backend/requirements.txt &&
       uvicorn backend.main:app --host 0.0.0.0 --port 8000"
+
+volumes:
+  mysql_data:
