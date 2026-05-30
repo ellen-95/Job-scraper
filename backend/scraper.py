@@ -1,5 +1,6 @@
 from typing import Any
 
+from ftfy import fix_text
 import requests
 
 
@@ -54,7 +55,7 @@ def _normalize_job(entry: dict) -> dict:
         "title": _clean_string(entry.get("position") or entry.get("title")),
         "company": _clean_string(entry.get("company")),
         "tags": _clean_tags(entry.get("tags")),
-        "location": _clean_string(entry.get("location")),
+        "location": _clean_location(entry.get("location")),
         "date_posted": _clean_string(entry.get("date")),
         "url": _clean_string(entry.get("url")),
     }
@@ -64,7 +65,18 @@ def _clean_string(value: Any) -> str:
     if value is None:
         return ""
 
-    return str(value).strip()
+    return fix_text(str(value)).strip()
+
+
+def _clean_location(value: Any) -> str:
+    if value is None:
+        return ""
+
+    if isinstance(value, list):
+        locations = [_clean_string(item) for item in value]
+        return ", ".join(location for location in locations if location)
+
+    return _clean_string(value)
 
 
 def _clean_tags(value: Any) -> list[str]:
@@ -72,9 +84,11 @@ def _clean_tags(value: Any) -> list[str]:
         return []
 
     tags = []
+    seen_tags = set()
     for tag in value:
         cleaned_tag = _clean_string(tag)
-        if cleaned_tag:
+        if cleaned_tag and cleaned_tag not in seen_tags:
+            seen_tags.add(cleaned_tag)
             tags.append(cleaned_tag)
 
     return tags

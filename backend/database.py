@@ -2,6 +2,7 @@ import os
 from collections.abc import Iterable
 from typing import Any
 
+from ftfy import fix_text
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import declarative_base, sessionmaker
 
@@ -51,7 +52,7 @@ def save_jobs(jobs: Iterable[dict]) -> int:
                     title=_clean_string(job.get("title")),
                     company=_clean_string(job.get("company")),
                     tags=_clean_tags(job.get("tags")),
-                    location=_clean_string(job.get("location")),
+                    location=_clean_location(job.get("location")),
                     date_posted=_clean_string(job.get("date_posted")),
                     url=url,
                 )
@@ -69,11 +70,30 @@ def _clean_string(value: Any) -> str:
     if value is None:
         return ""
 
-    return str(value).strip()
+    return fix_text(str(value)).strip()
+
+
+def _clean_location(value: Any) -> str:
+    if value is None:
+        return ""
+
+    if not isinstance(value, list):
+        return _clean_string(value)
+
+    locations = [_clean_string(item) for item in value]
+    return ", ".join(location for location in locations if location)
 
 
 def _clean_tags(value: Any) -> list[str]:
     if not isinstance(value, list):
         return []
 
-    return [_clean_string(tag) for tag in value if _clean_string(tag)]
+    tags = []
+    seen_tags = set()
+    for tag in value:
+        cleaned_tag = _clean_string(tag)
+        if cleaned_tag and cleaned_tag not in seen_tags:
+            seen_tags.add(cleaned_tag)
+            tags.append(cleaned_tag)
+
+    return tags
